@@ -74,9 +74,12 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    if (System.getenv('ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEYID')) {
+        signAllPublications()
+    }
 
     coordinates("io.github.jamaismagic.ffmpeg", "$argArtifactName", "$argVersionName")
+
 
     pom {
         name = "FFMPEG Android 16KB"
@@ -101,6 +104,25 @@ mavenPublishing {
             url = "https://github.com/JamaisMagic/ffmpeg-kit-16KB"
             connection = "scm:git@github.com:JamaisMagic/ffmpeg-kit-16KB.git"
             developerConnection = "=scm:git@github.com:JamaisMagic/ffmpeg-kit-16KB.git"
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.matching { it.name == 'publishToMavenCentral' }.configureEach {
+        onlyIf { System.getenv('ORG_GRADLE_PROJECT_mavenCentralUsername') }
+    }
+
+    if (System.getenv('GITHUB_TOKEN')) {
+        publishing.repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY')}")
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
+                }
+            }
         }
     }
 }

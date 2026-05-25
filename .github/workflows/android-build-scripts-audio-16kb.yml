@@ -8,6 +8,9 @@ jobs:
     name: android main audio on linux (ndk-r27-16k)
     runs-on: ubuntu-24.04
     timeout-minutes: 1440
+    permissions:
+      contents: read
+      packages: write
     defaults:
       run:
         shell: bash
@@ -51,6 +54,11 @@ jobs:
           echo "ANDROID_NDK_ROOT=$PWD/.ndk/$(ls .ndk)" >> $GITHUB_ENV
       - name: run the build script
         run: ./android.sh --disable-arm-v7a --enable-android-media-codec --enable-android-zlib --enable-lame --enable-libilbc --enable-libvorbis --enable-opencore-amr --enable-opus --enable-shine --enable-soxr --enable-speex --enable-twolame --enable-vo-amrwbenc
+      - name: publish to github packages
+        working-directory: android
+        run: ./gradlew ffmpeg-kit-android-lib:publishReleasePublicationToGitHubPackagesRepository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: prepare and upload main aar
         run: |
           AAR_PATH=$(find prebuilt -type f -name 'ffmpeg-kit.aar')
@@ -75,6 +83,9 @@ jobs:
     name: android lts audio on linux (ndk-r27-16k)
     runs-on: ubuntu-24.04
     timeout-minutes: 1440
+    permissions:
+      contents: read
+      packages: write
     defaults:
       run:
         shell: bash
@@ -118,6 +129,11 @@ jobs:
           echo "ANDROID_NDK_ROOT=$PWD/.ndk/$(ls .ndk)" >> $GITHUB_ENV
       - name: run the build script
         run: ./android.sh --lts --disable-arm-v7a --enable-android-media-codec --enable-android-zlib --enable-lame --enable-libilbc --enable-libvorbis --enable-opencore-amr --enable-opus --enable-shine --enable-soxr --enable-speex --enable-twolame --enable-vo-amrwbenc
+      - name: publish to github packages
+        working-directory: android
+        run: ./gradlew ffmpeg-kit-android-lib:publishReleasePublicationToGitHubPackagesRepository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: prepare and upload lts aar
         run: |
           AAR_PATH=$(find prebuilt -type f -name 'ffmpeg-kit.aar')
