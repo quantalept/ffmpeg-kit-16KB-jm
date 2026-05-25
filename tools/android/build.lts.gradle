@@ -1,8 +1,6 @@
-import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
-
 plugins {
     id "com.android.library"
-    id "com.vanniktech.maven.publish"
+    id "maven-publish"
 }
 
 def argArtifactName = System.getenv('ARG_ARTIFACT_NAME') ?: 'ffmpeg-kit-lts-16kb'
@@ -50,13 +48,9 @@ android {
         }
     }
 
-
-    // publishing {
-    //     singleVariant('release') {
-    //         withJavadocJar()
-    //         withSourcesJar()
-    //     }
-    // }
+    publishing {
+        singleVariant('release')
+    }
 }
 
 task javadoc(type: Javadoc) {
@@ -74,60 +68,32 @@ dependencies {
     testImplementation 'org.json:json:20230618'
 }
 
-mavenPublishing {
-  // the first parameter represennts which variant is published
-  // the second whether to publish a sources jar
-  // the third whether to publish a javadoc jar
-//   configure(new AndroidSingleVariantLibrary("release", true, true))
-    publishToMavenCentral()
-    if (System.getenv('ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEYID')) {
-        signAllPublications()
-    }
-
-    coordinates("io.github.jamaismagic.ffmpeg", "$argArtifactName", "$argVersionName")
-
-    pom {
-        name = "FFMPEG Android 16KB"
-        description = "FFmpeg Kit for Android (Maven Package for https://github.com/JamaisMagic/ffmpeg-kit-16KB)."
-        inceptionYear = "2025"
-        url = "https://github.com/JamaisMagic/ffmpeg-kit-16KB"
-        licenses {
-            license {
-                name = "GNU LESSER GENERAL PUBLIC LICENSE Version 3"
-                url = "https://www.gnu.org/licenses/lgpl-3.0.txt"
-                distribution = "https://www.gnu.org/licenses/lgpl-3.0.txt"
-            }
-        }
-        developers {
-            developer {
-                id = "JamaisMagic"
-                name = "JamaisNg"
-                url = "https://github.com/JamaisMagic"
-            }
-        }
-        scm {
-            url = "https://github.com/JamaisMagic/ffmpeg-kit-16KB"
-            connection = "scm:git@github.com:JamaisMagic/ffmpeg-kit-16KB.git"
-            developerConnection = "=scm:git@github.com:JamaisMagic/ffmpeg-kit-16KB.git"
-        }
-    }
-}
-
 afterEvaluate {
-    tasks.matching { it.name == 'publishToMavenCentral' }.configureEach {
-        onlyIf { System.getenv('ORG_GRADLE_PROJECT_mavenCentralUsername') }
-    }
-
-    if (System.getenv('GITHUB_TOKEN')) {
-        publishing.repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY')}")
-                credentials {
-                    username = System.getenv('GITHUB_ACTOR')
-                    password = System.getenv('GITHUB_TOKEN')
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = "io.github.jamaismagic.ffmpeg"
+                artifactId = "$argArtifactName"
+                version = "$argVersionName"
+            }
+        }
+        if (System.getenv('GITHUB_TOKEN')) {
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY')}")
+                    credentials {
+                        username = System.getenv('GITHUB_ACTOR')
+                        password = System.getenv('GITHUB_TOKEN')
+                    }
                 }
             }
         }
+    }
+
+    tasks.register('publishToMavenCentral') {
+        group = 'publishing'
+        description = 'No-op: Maven Central publishing removed'
     }
 }
